@@ -32,7 +32,7 @@ export default function Dashboard({ t, incomes, expenses, isMobile, currency }) 
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 20, paddingBottom: isMobile ? 80 : 0 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 20, paddingBottom: isMobile ? 180 : 0 }}>
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: isMobile ? 10 : 14 }}>

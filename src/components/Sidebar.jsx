@@ -35,21 +35,37 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
         boxShadow: isMobile ? "4px 0 20px rgba(0,0,0,.1)" : "none",
       }}>
         {/* LOGO */}
-        <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* ICONO RUTA */}
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0, boxShadow: "0 2px 8px rgba(37,99,235,.3)",
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M3 17l4-8 4 4 4-6 4 10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="3" cy="17" r="1.5" fill="#93c5fd"/>
+              <circle cx="19" cy="17" r="1.5" fill="#93c5fd"/>
+              <path d="M1 20h22" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 20, color: "#111827", letterSpacing: -0.5 }}>
+            <div style={{ fontWeight: 800, fontSize: 16, color: "#111827", letterSpacing: -0.5, lineHeight: 1 }}>
               Prosper<span style={{ color: "#2563eb" }}>Driver</span>
             </div>
-            <div style={{ fontSize: 10, color: "#9ca3af", letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
+            <div style={{ fontSize: 9, color: "#9ca3af", letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
               Financial Control
             </div>
           </div>
-          {isMobile && (
-            <button onClick={() => setMobileOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 4 }}>
-              <X size={20} />
-            </button>
-          )}
         </div>
+        {isMobile && (
+          <button onClick={() => setMobileOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 4 }}>
+            <X size={20} />
+          </button>
+        )}
+      </div>
 
         {/* LANG SWITCHER */}
         <div style={{ display: "flex", gap: 6, padding: "12px 16px", borderBottom: "1px solid #e5e7eb" }}>
@@ -83,25 +99,24 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
           ))}
         </nav>
 
-        {/* BUTTONS */}
-        <div style={{ padding: "12px 10px", borderTop: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: 8 }}>
-          <button onClick={() => { onNewRide(); if (isMobile) setMobileOpen(false); }} style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "10px", borderRadius: 10, border: "none",
-            background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer",
-          }}>
-            <PlusCircle size={15} /> {t.newRide}
-          </button>
-          <button onClick={() => { onNewExpense(); if (isMobile) setMobileOpen(false); }} style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            padding: "10px", borderRadius: 10, border: "1px solid #e5e7eb",
-            background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer",
-          }}>
-            <Receipt size={15} /> {t.newExpense}
-          </button>
+              {/* BANNER SIDEBAR */}
+      <div style={{ padding: "12px 16px", borderTop: "1px solid #e5e7eb" }}>
+        <div style={{
+          background: "linear-gradient(135deg,#eff6ff,#f5f3ff)",
+          border: "1px solid #dbeafe", borderRadius: 12,
+          padding: "12px", textAlign: "center",
+        }}>
+          <div style={{ fontSize: 18, marginBottom: 4 }}>📢</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "#2563eb", marginBottom: 2 }}>
+            Publicidade
+          </div>
+          <div style={{ fontSize: 10, color: "#9ca3af", lineHeight: 1.4 }}>
+            Seu anúncio aqui
+          </div>
         </div>
+      </div>
 
-        {/* DRIVER */}
+             {/* DRIVER */}
         <div style={{ padding: "14px 16px", borderTop: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#f9fafb", borderRadius: 10, marginBottom: 8 }}>
             <div style={{
