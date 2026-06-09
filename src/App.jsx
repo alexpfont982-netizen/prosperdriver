@@ -10,6 +10,7 @@ import Modal from "./components/Modal";
 import Login from "./components/Login";
 import WorkTimer from "./components/WorkTimer";
 import { Menu } from "lucide-react";
+import History from "./components/History";
 
 export default function App() {
   const { t, lang, setLang, currency, setCurrency } = useTranslation();
@@ -20,6 +21,7 @@ export default function App() {
   const [expenses, setExpenses]     = useState([]);
   const [modal, setModal]           = useState(null);
   const [activeNav, setActiveNav]   = useState("dashboard");
+  const [view, setView] = useState("dashboard");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading]       = useState(true);
   const [toast, setToast]           = useState(false);
@@ -128,7 +130,7 @@ export default function App() {
 
       <Sidebar
         t={t} lang={lang} setLang={setLang}
-        activeNav={activeNav} setActiveNav={setActiveNav}
+       activeNav={activeNav} setActiveNav={(id) => { setActiveNav(id); setView(id); }}
         onNewRide={() => setModal("income")}
         onNewExpense={() => setModal("expense")}
         user={profile} onLogout={handleLogout}
@@ -183,11 +185,23 @@ export default function App() {
                 </button>
               </>
             )}
-            <WorkTimer isMobile={isMobile} />
+            <WorkTimer
+              isMobile={isMobile}
+              incomes={incomes}
+              expenses={expenses}
+              currency={currency}
+              onSaveIncome={handleSaveIncome}
+              onSaveExpense={handleSaveExpense}
+            />
           </div>
         </div>
 
-        <Dashboard t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+       {view === "dashboard" && (
+          <Dashboard t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+        )}
+        {view === "history" && (
+          <History t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+        )}
       </main>
 
       {/* BANNER PUBLICITARIO MOBILE */}

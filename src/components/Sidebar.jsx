@@ -1,13 +1,14 @@
-import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu, TrendingUp } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu, TrendingUp, History } from "lucide-react";
 import { useDevice } from "../hooks/useDevice";
 
+
 const navItems = [
-  { id: "dashboard", icon: LayoutDashboard },
-  { id: "newRide", icon: TrendingUp },
-  { id: "newExpense", icon: Receipt },
-  { id: "weeklyRevenue", icon: BarChart2 },
-  { id: "monthlyGoals", icon: Target },
-  { id: "byPlatform", icon: Calendar },
+  { id: "dashboard",     icon: LayoutDashboard },
+  { id: "newRide",       icon: TrendingUp },
+  { id: "newExpense",    icon: Receipt },
+  { id: "history",       icon: History },
+  { id: "monthlyGoals",  icon: Target },
+  { id: "byPlatform",    icon: Calendar },
 ];
 
 export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onNewRide, onNewExpense, user, onLogout, mobileOpen, setMobileOpen }) {

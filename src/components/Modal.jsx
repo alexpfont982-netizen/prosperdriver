@@ -28,8 +28,8 @@ export default function Modal({ t, onClose, onSaveIncome, onSaveExpense, default
     fontSize: 14, outline: "none", width: "100%",
   };
 
-  const categories = ["fuel","maintenance","fee","insurance","car-wash","other"];
-  const catEmoji = { fuel:"⛽", maintenance:"🔧", fee:"📱", insurance:"🛡️", "car-wash":"🚿", other:"📦" };
+ const categories = ["fuel","maintenance","fee","insurance","car-wash","tires","oil","other"];
+const catEmoji = { fuel:"⛽", maintenance:"🔧", fee:"📱", insurance:"🛡️", "car-wash":"🚿", tires:"🔄", oil:"🛢️", other:"📦" };
 
   return (
     <div style={{
@@ -138,9 +138,14 @@ export default function Modal({ t, onClose, onSaveIncome, onSaveExpense, default
               <div style={{ fontSize: 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{t.category}</div>
               <select style={inp} value={f.category} onChange={e => setF(p => ({...p, category: e.target.value}))}>
                 <option value="">—</option>
-                {categories.map(c => (
-                  <option key={c} value={c}>{catEmoji[c]} {t[c === "car-wash" ? "carWash" : c]}</option>
-                ))}
+                <option value="fuel">⛽ {t.fuel}</option>
+                <option value="maintenance">🔧 {t.maintenance}</option>
+                <option value="fee">📱 {t.fee}</option>
+                <option value="insurance">🛡️ {t.insurance}</option>
+                <option value="car-wash">🚿 {t.carWash}</option>
+                <option value="tires">🔄 {t.tires}</option>
+                <option value="oil">🛢️ {t.oil}</option>
+                <option value="other">📦 {t.other}</option>
               </select>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>

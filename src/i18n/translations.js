@@ -36,6 +36,9 @@ export const translations = {
     insurance: "Seguro",
     carWash: "Lavado",
     other: "Otros",
+    history: "Historial",
+    tires: "Cauchos/Llantas",
+    oil: "Aceite",
   },
   pt: {
     appName: "ProsperDriver",
@@ -74,6 +77,9 @@ export const translations = {
     insurance: "Seguro",
     carWash: "Lavagem",
     other: "Outros",
+    history: "Histórico",
+    tires: "Pneus",
+    oil: "Óleo",
   },
   en: {
     appName: "ProsperDriver",
@@ -112,5 +118,8 @@ export const translations = {
     insurance: "Insurance",
     carWash: "Car Wash",
     other: "Others",
+    history: "History",
+    tires: "Tires",
+    oil: "Oil",
   },
 };
