@@ -2,7 +2,7 @@ export const translations = {
   es: {
     appName: "ProsperDriver",
     dashboard: "Panel Principal",
-    newRide: "Nueva Corrida",
+    newRide: "Registro de Ganancia",
     newExpense: "Nueva Despesa",
     grossRevenue: "Ingreso Bruto",
     totalExpenses: "Total Gastos",
@@ -40,7 +40,7 @@ export const translations = {
   pt: {
     appName: "ProsperDriver",
     dashboard: "Painel Principal",
-    newRide: "Nova Corrida",
+    newRide: "Registro de Ganho",
     newExpense: "Nova Despesa",
     grossRevenue: "Faturamento Bruto",
     totalExpenses: "Total Despesas",
@@ -78,7 +78,7 @@ export const translations = {
   en: {
     appName: "ProsperDriver",
     dashboard: "Main Dashboard",
-    newRide: "New Ride",
+    newRide: "Earnings Record",
     newExpense: "New Expense",
     grossRevenue: "Gross Revenue",
     totalExpenses: "Total Expenses",

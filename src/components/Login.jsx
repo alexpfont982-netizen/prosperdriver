@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { COUNTRIES } from "../data/seed";
 
-export default function Login({ t, lang, setLang, onLogin }) {
+export default function Login({ t, lang, setLang, onLogin, onRegister }) {
   const [mode, setMode]         = useState("login");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -9,36 +9,28 @@ export default function Login({ t, lang, setLang, onLogin }) {
   const [country, setCountry]   = useState(null);
   const [currency, setCurrency] = useState("");
   const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
 
   function handleCountryChange(code) {
     const c = COUNTRIES.find(c => c.code === code);
     if (c) { setCountry(c); setCurrency(c.symbol); setLang(c.lang); }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!email || !password) { setError("Preencha todos os campos."); return; }
     if (mode === "register" && !name)    { setError("Informe seu nome."); return; }
     if (mode === "register" && !country) { setError("Selecione seu país."); return; }
-
-    const users = JSON.parse(localStorage.getItem("pd_users") || "[]");
-
-    if (mode === "register") {
-      if (users.find(u => u.email === email)) { setError("Email já cadastrado."); return; }
-      const newUser = {
-        email, password, name,
-        country: country.code,
-        countryName: country.name,
-        flag: country.flag,
-        currency: currency || country.symbol,
-        currencyCode: country.currency,
-        lang: country.lang,
-      };
-      localStorage.setItem("pd_users", JSON.stringify([...users, newUser]));
-      onLogin(newUser);
-    } else {
-      const user = users.find(u => u.email === email && u.password === password);
-      if (!user) { setError("Email ou senha incorretos."); return; }
-      onLogin(user);
+    setLoading(true); setError("");
+    try {
+      if (mode === "register") {
+        await onRegister({ email, password, name, country, currency });
+      } else {
+        await onLogin({ email, password });
+      }
+    } catch (err) {
+      setError(err.message || "Erro ao entrar.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -50,9 +42,9 @@ export default function Login({ t, lang, setLang, onLogin }) {
   };
 
   const labels = {
-    pt: { login:"Entrar", register:"Criar conta", email:"E-mail", password:"Senha", name:"Seu nome", loginTab:"Já tenho conta", registerTab:"Criar conta", welcome:"Bem-vindo ao", sub:"Controle financeiro para motoristas de app", forgot:"Esqueci minha senha", country:"País", currencyLabel:"Moeda (pode alterar)", selectCountry:"Selecione seu país..." },
-    es: { login:"Entrar", register:"Registrarse", email:"Correo", password:"Contraseña", name:"Tu nombre", loginTab:"Ya tengo cuenta", registerTab:"Crear cuenta", welcome:"Bienvenido a", sub:"Control financiero para conductores de app", forgot:"Olvidé mi contraseña", country:"País", currencyLabel:"Moneda (puedes cambiarla)", selectCountry:"Selecciona tu país..." },
-    en: { login:"Sign In", register:"Sign Up", email:"Email", password:"Password", name:"Your name", loginTab:"I have an account", registerTab:"Create account", welcome:"Welcome to", sub:"Financial control for rideshare drivers", forgot:"Forgot my password", country:"Country", currencyLabel:"Currency (you can change it)", selectCountry:"Select your country..." },
+    pt: { login:"Entrar", register:"Criar conta", email:"E-mail", password:"Senha", name:"Seu nome", loginTab:"Já tenho conta", registerTab:"Criar conta", sub:"Controle financeiro para motoristas de app", forgot:"Esqueci minha senha", country:"País", currencyLabel:"Moeda (pode alterar)", selectCountry:"Selecione seu país..." },
+    es: { login:"Entrar", register:"Registrarse", email:"Correo", password:"Contraseña", name:"Tu nombre", loginTab:"Ya tengo cuenta", registerTab:"Crear cuenta", sub:"Control financiero para conductores de app", forgot:"Olvidé mi contraseña", country:"País", currencyLabel:"Moneda (puedes cambiarla)", selectCountry:"Selecciona tu país..." },
+    en: { login:"Sign In", register:"Sign Up", email:"Email", password:"Password", name:"Your name", loginTab:"I have an account", registerTab:"Create account", sub:"Financial control for rideshare drivers", forgot:"Forgot my password", country:"Country", currencyLabel:"Currency (you can change it)", selectCountry:"Select your country..." },
   };
   const l = labels[lang] || labels.pt;
 
@@ -117,22 +109,18 @@ export default function Login({ t, lang, setLang, onLogin }) {
               </div>
             )}
 
-            {/* COUNTRY SELECTOR */}
             {mode === "register" && (
               <div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 500 }}>{l.country}</div>
                 <select style={inp} value={country?.code || ""} onChange={e => handleCountryChange(e.target.value)}>
                   <option value="">{l.selectCountry}</option>
                   {COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.name} — {c.currency}
-                    </option>
+                    <option key={c.code} value={c.code}>{c.flag} {c.name} — {c.currency}</option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* CURRENCY — editable */}
             {mode === "register" && country && (
               <div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 500 }}>{l.currencyLabel}</div>
@@ -158,21 +146,19 @@ export default function Login({ t, lang, setLang, onLogin }) {
                 onKeyDown={e => e.key === "Enter" && handleSubmit()} />
             </div>
 
-            {/* ERROR */}
             {error && (
               <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#dc2626" }}>
                 {error}
               </div>
             )}
 
-            {/* SUBMIT */}
-            <button onClick={handleSubmit} style={{
+            <button onClick={handleSubmit} disabled={loading} style={{
               width: "100%", padding: "12px", borderRadius: 10, border: "none",
-              background: "#2563eb", color: "#fff", fontWeight: 700,
-              fontSize: 15, cursor: "pointer", marginTop: 4,
+              background: loading ? "#93c5fd" : "#2563eb", color: "#fff", fontWeight: 700,
+              fontSize: 15, cursor: loading ? "not-allowed" : "pointer", marginTop: 4,
               boxShadow: "0 4px 12px rgba(37,99,235,.3)",
             }}>
-              {mode === "login" ? l.login : l.register}
+              {loading ? "..." : mode === "login" ? l.login : l.register}
             </button>
 
             {mode === "login" && (

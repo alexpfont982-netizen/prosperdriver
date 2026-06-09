@@ -1,13 +1,13 @@
-import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu, TrendingUp } from "lucide-react";
 import { useDevice } from "../hooks/useDevice";
 
 const navItems = [
-  { id: "dashboard",     icon: LayoutDashboard },
-  { id: "newRide",       icon: PlusCircle },
-  { id: "newExpense",    icon: Receipt },
+  { id: "dashboard", icon: LayoutDashboard },
+  { id: "newRide", icon: TrendingUp },
+  { id: "newExpense", icon: Receipt },
   { id: "weeklyRevenue", icon: BarChart2 },
-  { id: "monthlyGoals",  icon: Target },
-  { id: "byPlatform",    icon: Calendar },
+  { id: "monthlyGoals", icon: Target },
+  { id: "byPlatform", icon: Calendar },
 ];
 
 export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onNewRide, onNewExpense, user, onLogout, mobileOpen, setMobileOpen }) {
@@ -53,7 +53,7 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
 
         {/* LANG SWITCHER */}
         <div style={{ display: "flex", gap: 6, padding: "12px 16px", borderBottom: "1px solid #e5e7eb" }}>
-          {["pt","es","en"].map(l => (
+          {["pt", "es", "en"].map(l => (
             <button key={l} onClick={() => setLang(l)} style={{
               flex: 1, padding: "5px 0", borderRadius: 8, border: "1px solid",
               borderColor: lang === l ? "#2563eb" : "#e5e7eb",
@@ -69,7 +69,7 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
         {/* NAV */}
         <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
           {navItems.map(({ id, icon: Icon }) => (
-            <div key={id} onClick={() => { setActiveNav(id); if(isMobile) setMobileOpen(false); }} style={{
+            <div key={id} onClick={() => { setActiveNav(id); if (isMobile) setMobileOpen(false); }} style={{
               display: "flex", alignItems: "center", gap: 10,
               padding: "10px 12px", borderRadius: 10, cursor: "pointer",
               fontSize: 13, fontWeight: 500,
@@ -85,14 +85,14 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
 
         {/* BUTTONS */}
         <div style={{ padding: "12px 10px", borderTop: "1px solid #e5e7eb", display: "flex", flexDirection: "column", gap: 8 }}>
-          <button onClick={() => { onNewRide(); if(isMobile) setMobileOpen(false); }} style={{
+          <button onClick={() => { onNewRide(); if (isMobile) setMobileOpen(false); }} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             padding: "10px", borderRadius: 10, border: "none",
             background: "#2563eb", color: "#fff", fontWeight: 600, fontSize: 13, cursor: "pointer",
           }}>
             <PlusCircle size={15} /> {t.newRide}
           </button>
-          <button onClick={() => { onNewExpense(); if(isMobile) setMobileOpen(false); }} style={{
+          <button onClick={() => { onNewExpense(); if (isMobile) setMobileOpen(false); }} style={{
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             padding: "10px", borderRadius: 10, border: "1px solid #e5e7eb",
             background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer",
