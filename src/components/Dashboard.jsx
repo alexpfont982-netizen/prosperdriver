@@ -36,10 +36,11 @@ export default function Dashboard({ t, incomes, expenses, isMobile, currency }) 
 
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: isMobile ? 10 : 14 }}>
-        {[
-          { label: t.grossRevenue,  value: fmt(gross),  badge: `12% ${t.vsLastMonth}`, up: true,  color: "#2563eb" },
-          { label: t.totalExpenses, value: fmt(expTot), badge: `${fmt(210)} ${t.fuel}`, up: false, color: "#ea580c" },
-          { label: t.netProfit,     value: fmt(net),    badge: `${t.margin} ${((net/Math.max(gross,1))*100).toFixed(1)}%`, up: true, color: "#16a34a" },
+        
+         {[
+          { label: t.grossRevenue,  value: fmt(gross),  badge: gross > 0 ? `${rides} ${t.totalRides}` : t.vsLastMonth, up: true,  color: "#2563eb" },
+          { label: t.totalExpenses, value: fmt(expTot), badge: expTot > 0 ? `${expenses.length} lançamentos` : "—", up: false, color: "#ea580c" },
+          { label: t.netProfit,     value: fmt(net),    badge: `${t.margin} ${((net/Math.max(gross,1))*100).toFixed(1)}%`, up: net >= 0, color: "#16a34a" },
         ].map((k,i) => (
           <div key={i} style={{ ...panel, borderTop: `3px solid ${k.color}` }}>
             <div style={{ fontSize: isMobile ? 9 : 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{k.label}</div>

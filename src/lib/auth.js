@@ -2,23 +2,25 @@ import { supabase } from "./supabase";
 
 // REGISTRO
 export async function signUp({ email, password, name, country }) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        name,
+        country_code: country.code,
+        country_name: country.name,
+        flag: country.flag,
+        currency_symbol: country.symbol,
+        currency_code: country.currency,
+        lang: country.lang,
+      },
+    },
+  });
   if (error) throw error;
 
-  // Crear perfil
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .insert({
-      id: data.user.id,
-      name,
-      country_code: country.code,
-      country_name: country.name,
-      flag: country.flag,
-      currency_symbol: country.symbol,
-      currency_code: country.currency,
-      lang: country.lang,
-    });
-  if (profileError) throw profileError;
+  // El perfil ya se crea automáticamente por el trigger "on_auth_user_created"
+  // (lee estos datos desde raw_user_meta_data), así que no hace falta insertarlo aquí.
 
   return data.user;
 }

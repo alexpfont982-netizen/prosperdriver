@@ -1,5 +1,6 @@
 import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu, TrendingUp, History } from "lucide-react";
 import { useDevice } from "../hooks/useDevice";
+import logoMark from "../assets/logo-mark.png";
 
 
 const navItems = [
@@ -38,20 +39,12 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
         {/* LOGO */}
       <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* ICONO RUTA */}
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: "linear-gradient(135deg,#2563eb,#1d4ed8)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            flexShrink: 0, boxShadow: "0 2px 8px rgba(37,99,235,.3)",
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M3 17l4-8 4 4 4-6 4 10" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="3" cy="17" r="1.5" fill="#93c5fd"/>
-              <circle cx="19" cy="17" r="1.5" fill="#93c5fd"/>
-              <path d="M1 20h22" stroke="#93c5fd" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
+          {/* ICONO LOGO */}
+          <img
+            src={logoMark}
+            alt="ProsperDriver"
+            style={{ width: 36, height: 36, flexShrink: 0 }}
+          />
           <div>
             <div style={{ fontWeight: 800, fontSize: 16, color: "#111827", letterSpacing: -0.5, lineHeight: 1 }}>
               Prosper<span style={{ color: "#2563eb" }}>Driver</span>

@@ -84,12 +84,17 @@ export default function App() {
     setIncomes([]); setExpenses([]);
   }
 
-  async function handleSaveIncome(data) {
+ async function handleSaveIncome(data) {
     try {
+      console.log("Salvando corrida:", data);
       const saved = await addRide(user.id, data);
+      console.log("Salvo:", saved);
       setIncomes(p => [{ ...saved, rides: saved.rides_count }, ...p]);
       showToast("✓ " + t.registerRide);
-    } catch (err) { showToast("❌ Erro ao salvar"); }
+    } catch (err) {
+      console.error("Erro:", err);
+      showToast("❌ Erro ao salvar");
+    }
   }
 
   async function handleSaveExpense(data) {
