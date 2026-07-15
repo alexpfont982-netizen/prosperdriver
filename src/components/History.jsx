@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { PLAT_CONFIG, CAT_CONFIG } from "../data/seed";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-export default function History({ t, incomes, expenses, isMobile, currency }) {
+export default function History({ t, incomes, expenses, journeys = [], isMobile, currency }) {
   const [tab, setTab]       = useState("incomes");
   const [filter, setFilter] = useState("all");
 
@@ -36,6 +37,26 @@ export default function History({ t, incomes, expenses, isMobile, currency }) {
   });
   const maxVal = Math.max(...last7.map(d => Math.max(d.income, d.expense)), 1);
 
+  // ── GANHOS E DESPESAS ACUMULADOS (histórico completo) ──
+  const cumulativeData = (() => {
+    const dailyMap = {};
+    incomes.forEach(i => {
+      dailyMap[i.date] = dailyMap[i.date] || { date: i.date, income: 0, expense: 0 };
+      dailyMap[i.date].income += i.amount;
+    });
+    expenses.forEach(e => {
+      dailyMap[e.date] = dailyMap[e.date] || { date: e.date, income: 0, expense: 0 };
+      dailyMap[e.date].expense += e.amount;
+    });
+    const sorted = Object.values(dailyMap).sort((a,b) => a.date.localeCompare(b.date));
+    let cumIncome = 0, cumExpense = 0;
+    return sorted.map(d => {
+      cumIncome += d.income;
+      cumExpense += d.expense;
+      return { date: d.date.slice(5).replace("-","/"), ganancias: cumIncome, gastos: cumExpense };
+    });
+  })();
+
   const panel = {
     background: "#fff", border: "1px solid #e5e7eb",
     borderRadius: 16, padding: isMobile ? 16 : 22,
@@ -46,6 +67,41 @@ export default function History({ t, incomes, expenses, isMobile, currency }) {
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap: isMobile ? 14 : 20, paddingBottom: isMobile ? 180 : 0 }}>
+
+      {/* GANHOS E DESPESAS ACUMULADOS */}
+      <div style={panel}>
+        <div style={{ fontWeight: 600, fontSize: 15, color: "#111827", marginBottom: 16 }}>
+          Ganhos e Despesas Acumulados
+        </div>
+        {cumulativeData.length === 0 ? (
+          <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "40px 0" }}>Sem dados ainda</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
+            <AreaChart data={cumulativeData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorGanancias" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorGastos" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ea580c" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#ea580c" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={40} />
+              <Tooltip formatter={(v) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} />
+              <Area type="monotone" dataKey="ganancias" stroke="#16a34a" strokeWidth={2} fill="url(#colorGanancias)" name={t.grossRevenue} />
+              <Area type="monotone" dataKey="gastos" stroke="#ea580c" strokeWidth={2} fill="url(#colorGastos)" name={t.totalExpenses} />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+        <div style={{ display: "flex", gap: 16, marginTop: 10, fontSize: 11, color: "#6b7280" }}>
+          <span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#16a34a", marginRight: 4 }} />{t.grossRevenue}</span>
+          <span><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "#ea580c", marginRight: 4 }} />{t.totalExpenses}</span>
+        </div>
+      </div>
 
       {/* GRÁFICO EVOLUCIÓN */}
       <div style={panel}>
@@ -86,6 +142,7 @@ export default function History({ t, incomes, expenses, isMobile, currency }) {
         {[
           { id:"incomes",  label: `💰 Ganhos (${incomes.length})` },
           { id:"expenses", label: `📋 Gastos (${expenses.length})` },
+          { id:"journeys", label: `🚗 Jornadas (${journeys.length})` },
         ].map(tb => (
           <div key={tb.id} onClick={() => setTab(tb.id)} style={{
             flex:1, textAlign:"center", padding:"9px", borderRadius:9,
@@ -212,6 +269,42 @@ export default function History({ t, incomes, expenses, isMobile, currency }) {
                   </div>
                 );
               })
+          )}
+        </div>
+      )}
+      {/* JORNADAS */}
+      {tab === "journeys" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {journeys.length === 0 ? (
+            <div style={{ ...panel, textAlign:"center", color:"#9ca3af", padding:40 }}>
+              Nenhuma jornada registrada ainda.
+            </div>
+          ) : (
+            [...journeys]
+              .sort((a,b) => b.date?.localeCompare(a.date))
+              .map((j) => (
+                <div key={j.id} style={panel}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                    <div style={{ fontWeight:600, fontSize:14, color:"#111827" }}>
+                      {new Date(j.date+"T12:00:00").toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" })}
+                    </div>
+                    <div style={{ fontWeight:700, fontSize:16, color:"#16a34a" }}>{fmt(j.total_earned)}</div>
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap:8 }}>
+                    {[
+                      { label:"Tempo ativo", val: `${String(Math.floor(j.elapsed_seconds/3600)).padStart(2,"0")}:${String(Math.floor((j.elapsed_seconds%3600)/60)).padStart(2,"0")}` },
+                      { label:"Km rodados",  val: `${Number(j.km_done||0).toFixed(1)} km` },
+                      { label:"Por km",      val: fmt(j.per_km||0) },
+                      { label:"Por hora",    val: fmt(j.per_hour||0) },
+                    ].map((item,i) => (
+                      <div key={i} style={{ background:"#f9fafb", borderRadius:8, padding:"8px 10px" }}>
+                        <div style={{ fontSize:10, color:"#9ca3af", marginBottom:2 }}>{item.label}</div>
+                        <div style={{ fontSize:13, fontWeight:700, color:"#111827" }}>{item.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
           )}
         </div>
       )}

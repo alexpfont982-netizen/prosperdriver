@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 
 // REGISTRO
-export async function signUp({ email, password, name, country }) {
+export async function signUp({ email, password, name, country, gender, birthDate }) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -14,6 +14,8 @@ export async function signUp({ email, password, name, country }) {
         currency_symbol: country.symbol,
         currency_code: country.currency,
         lang: country.lang,
+        gender: gender || null,
+        birth_date: birthDate || null,
       },
     },
   });
@@ -44,6 +46,18 @@ export async function getProfile(userId) {
     .from("profiles")
     .select("*")
     .eq("id", userId)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// ACTUALIZAR METAS DO MÊS
+export async function updateGoals(userId, { goalGross, goalNet }) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ goal_gross: goalGross, goal_net: goalNet })
+    .eq("id", userId)
+    .select()
     .single();
   if (error) throw error;
   return data;

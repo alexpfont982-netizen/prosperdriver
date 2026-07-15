@@ -1,6 +1,9 @@
-import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, Calendar, X, Menu, TrendingUp, History } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, X, Menu, TrendingUp, History } from "lucide-react";
 import { useDevice } from "../hooks/useDevice";
 import logoMark from "../assets/logo-mark.png";
+import avatarMale from "../assets/avatar-male.png";
+import avatarFemale from "../assets/avatar-female.png";
+import avatarNeutral from "../assets/avatar-neutral.png";
 
 
 const navItems = [
@@ -9,8 +12,13 @@ const navItems = [
   { id: "newExpense",    icon: Receipt },
   { id: "history",       icon: History },
   { id: "monthlyGoals",  icon: Target },
-  { id: "byPlatform",    icon: Calendar },
 ];
+
+function avatarForGender(gender) {
+  if (gender === "male")   return avatarMale;
+  if (gender === "female") return avatarFemale;
+  return avatarNeutral;
+}
 
 export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onNewRide, onNewExpense, user, onLogout, mobileOpen, setMobileOpen }) {
   const { isMobile } = useDevice();
@@ -78,19 +86,28 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
 
         {/* NAV */}
         <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-          {navItems.map(({ id, icon: Icon }) => (
-            <div key={id} onClick={() => { setActiveNav(id); if (isMobile) setMobileOpen(false); }} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-              fontSize: 13, fontWeight: 500,
-              background: activeNav === id ? "#eff6ff" : "transparent",
-              color: activeNav === id ? "#2563eb" : "#6b7280",
-              border: activeNav === id ? "1px solid #dbeafe" : "1px solid transparent",
-            }}>
-              <Icon size={16} />
-              {t[id] || id}
-            </div>
-          ))}
+          {navItems.map(({ id, icon: Icon }) => {
+            const isAction = id === "newRide" || id === "newExpense";
+            const isActive = !isAction && activeNav === id;
+            return (
+              <div key={id} onClick={() => {
+                if (id === "newRide") onNewRide();
+                else if (id === "newExpense") onNewExpense();
+                else setActiveNav(id);
+                if (isMobile) setMobileOpen(false);
+              }} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "10px 12px", borderRadius: 10, cursor: "pointer",
+                fontSize: 13, fontWeight: 500,
+                background: isActive ? "#eff6ff" : "transparent",
+                color: isActive ? "#2563eb" : "#6b7280",
+                border: isActive ? "1px solid #dbeafe" : "1px solid transparent",
+              }}>
+                <Icon size={16} />
+                {t[id] || id}
+              </div>
+            );
+          })}
         </nav>
 
               {/* BANNER SIDEBAR */}
@@ -113,14 +130,11 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
              {/* DRIVER */}
         <div style={{ padding: "14px 16px", borderTop: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#f9fafb", borderRadius: 10, marginBottom: 8 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: "linear-gradient(135deg,#2563eb,#7c3aed)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 700, fontSize: 13, color: "#fff", flexShrink: 0,
-            }}>
-              {user?.name ? user.name[0].toUpperCase() : "U"}
-            </div>
+            <img
+              src={avatarForGender(user?.gender)}
+              alt="avatar"
+              style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, objectFit: "cover" }}
+            />
             <div style={{ overflow: "hidden" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {user?.name || "Usuário"}

@@ -6,6 +6,8 @@ export default function Login({ t, lang, setLang, onLogin, onRegister }) {
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [name, setName]         = useState("");
+  const [gender, setGender]     = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [country, setCountry]   = useState(null);
   const [currency, setCurrency] = useState("");
   const [error, setError]       = useState("");
@@ -23,7 +25,7 @@ export default function Login({ t, lang, setLang, onLogin, onRegister }) {
     setLoading(true); setError("");
     try {
       if (mode === "register") {
-        await onRegister({ email, password, name, country, currency });
+        await onRegister({ email, password, name, country, currency, gender, birthDate });
       } else {
         await onLogin({ email, password });
       }
@@ -42,9 +44,9 @@ export default function Login({ t, lang, setLang, onLogin, onRegister }) {
   };
 
   const labels = {
-    pt: { login:"Entrar", register:"Criar conta", email:"E-mail", password:"Senha", name:"Seu nome", loginTab:"Já tenho conta", registerTab:"Criar conta", sub:"Controle financeiro para motoristas de app", forgot:"Esqueci minha senha", country:"País", currencyLabel:"Moeda (pode alterar)", selectCountry:"Selecione seu país..." },
-    es: { login:"Entrar", register:"Registrarse", email:"Correo", password:"Contraseña", name:"Tu nombre", loginTab:"Ya tengo cuenta", registerTab:"Crear cuenta", sub:"Control financiero para conductores de app", forgot:"Olvidé mi contraseña", country:"País", currencyLabel:"Moneda (puedes cambiarla)", selectCountry:"Selecciona tu país..." },
-    en: { login:"Sign In", register:"Sign Up", email:"Email", password:"Password", name:"Your name", loginTab:"I have an account", registerTab:"Create account", sub:"Financial control for rideshare drivers", forgot:"Forgot my password", country:"Country", currencyLabel:"Currency (you can change it)", selectCountry:"Select your country..." },
+    pt: { login:"Entrar", register:"Criar conta", email:"E-mail", password:"Senha", name:"Seu nome", loginTab:"Já tenho conta", registerTab:"Criar conta", sub:"Controle financeiro para motoristas de app", forgot:"Esqueci minha senha", country:"País", currencyLabel:"Moeda (pode alterar)", selectCountry:"Selecione seu país...", gender:"Gênero", genderMale:"Masculino", genderFemale:"Feminino", genderPreferNot:"Prefiro não dizer", genderSelect:"Selecione...", birthDate:"Data de nascimento" },
+    es: { login:"Entrar", register:"Registrarse", email:"Correo", password:"Contraseña", name:"Tu nombre", loginTab:"Ya tengo cuenta", registerTab:"Crear cuenta", sub:"Control financiero para conductores de app", forgot:"Olvidé mi contraseña", country:"País", currencyLabel:"Moneda (puedes cambiarla)", selectCountry:"Selecciona tu país...", gender:"Género", genderMale:"Masculino", genderFemale:"Femenino", genderPreferNot:"Prefiero no decirlo", genderSelect:"Selecciona...", birthDate:"Fecha de nacimiento" },
+    en: { login:"Sign In", register:"Sign Up", email:"Email", password:"Password", name:"Your name", loginTab:"I have an account", registerTab:"Create account", sub:"Financial control for rideshare drivers", forgot:"Forgot my password", country:"Country", currencyLabel:"Currency (you can change it)", selectCountry:"Select your country...", gender:"Gender", genderMale:"Male", genderFemale:"Female", genderPreferNot:"Prefer not to say", genderSelect:"Select...", birthDate:"Date of birth" },
   };
   const l = labels[lang] || labels.pt;
 
@@ -106,6 +108,24 @@ export default function Login({ t, lang, setLang, onLogin, onRegister }) {
               <div>
                 <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 500 }}>{l.name}</div>
                 <input style={inp} placeholder="Carlos Silva" value={name} onChange={e => { setName(e.target.value); setError(""); }} />
+              </div>
+            )}
+
+            {mode === "register" && (
+              <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 500 }}>{l.gender}</div>
+                  <select style={inp} value={gender} onChange={e => setGender(e.target.value)}>
+                    <option value="">{l.genderSelect}</option>
+                    <option value="male">{l.genderMale}</option>
+                    <option value="female">{l.genderFemale}</option>
+                    <option value="prefer_not_to_say">{l.genderPreferNot}</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 500 }}>{l.birthDate}</div>
+                  <input style={inp} type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
+                </div>
               </div>
             )}
 

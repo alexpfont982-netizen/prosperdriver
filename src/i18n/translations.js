@@ -39,6 +39,9 @@ export const translations = {
     history: "Historial",
     tires: "Cauchos/Llantas",
     oil: "Aceite",
+    startJourney: "Iniciar Jornada",
+    journeyShort: "Jornada",
+    editGoals: "Editar metas",
   },
   pt: {
     appName: "ProsperDriver",
@@ -80,6 +83,9 @@ export const translations = {
     history: "Histórico",
     tires: "Pneus",
     oil: "Óleo",
+    startJourney: "Iniciar Jornada",
+    journeyShort: "Jornada",
+    editGoals: "Editar metas",
   },
   en: {
     appName: "ProsperDriver",
@@ -121,5 +127,8 @@ export const translations = {
     history: "History",
     tires: "Tires",
     oil: "Oil",
+    startJourney: "Start Journey",
+    journeyShort: "Journey",
+    editGoals: "Edit goals",
   },
 };

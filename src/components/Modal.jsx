@@ -3,7 +3,7 @@ import { PLAT_CONFIG } from "../data/seed";
 import { useState } from "react";
 
 export default function Modal({ t, onClose, onSaveIncome, onSaveExpense, defaultTab, currency }) {
-  const [tab, setTab] = useState(defaultTab || "income");
+  const tab = defaultTab || "income";
   const [selPlat, setSelPlat] = useState("uber");
   const [f, setF] = useState({
     amount: "", rides: "", hours: "", date: new Date().toISOString().slice(0,10),
@@ -58,21 +58,6 @@ const catEmoji = { fuel:"⛽", maintenance:"🔧", fee:"📱", insurance:"🛡�
           }}>
             <X size={16} />
           </button>
-        </div>
-
-        {/* TABS */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
-          {["income","expense"].map(tb => (
-            <div key={tb} onClick={() => setTab(tb)} style={{
-              flex: 1, padding: "9px", borderRadius: 8, textAlign: "center",
-              fontSize: 13, fontWeight: 500, cursor: "pointer",
-              border: tab === tb ? "1px solid #bfdbfe" : "1px solid #e5e7eb",
-              background: tab === tb ? "#eff6ff" : "#f9fafb",
-              color: tab === tb ? "#2563eb" : "#9ca3af",
-            }}>
-              {tb === "income" ? t.registerRide : t.registerExpense}
-            </div>
-          ))}
         </div>
 
         {tab === "income" ? (

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Play, Pause, Flag, MapPin, Plus, X } from "lucide-react";
 import { PLAT_CONFIG } from "../data/seed";
 
-export default function WorkTimer({ isMobile, incomes = [], expenses = [], currency, onSaveIncome, onSaveExpense }) {
+export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], currency, onSaveIncome, onSaveExpense, onSaveJourney }) {
   const [status, setStatus]           = useState("idle");
   const [elapsed, setElapsed]         = useState(0);
   const [kmStart, setKmStart]         = useState("");
@@ -85,14 +85,31 @@ export default function WorkTimer({ isMobile, incomes = [], expenses = [], curre
     }
     buildSummary();
   }
-  function buildSummary() {
+  async function buildSummary() {
     const kmDone      = parseFloat(kmEnd) - parseFloat(kmStart);
     const hours       = elapsed / 3600;
     const totalEarned = earnings.reduce((a,e) => a + (parseFloat(e.amount)||0), 0);
     const perKm       = kmDone > 0 ? totalEarned / kmDone : 0;
     const perHour     = hours  > 0 ? totalEarned / hours  : 0;
-    setSummary({ kmDone: kmDone > 0 ? kmDone : 0, hours, elapsed, totalEarned, perKm, perHour });
+    const finalSummary = { kmDone: kmDone > 0 ? kmDone : 0, hours, elapsed, totalEarned, perKm, perHour };
+    setSummary(finalSummary);
     setStep("summary");
+
+    // Guardar la jornada en Supabase para poder consultarla después
+    const today = new Date().toISOString().slice(0,10);
+    await onSaveJourney?.({
+      date: today,
+      startedAt: startedAt ? startedAt.toISOString() : null,
+      endedAt: new Date().toISOString(),
+      elapsed,
+      kmStart: parseFloat(kmStart) || null,
+      kmEnd: parseFloat(kmEnd) || null,
+      kmDone: finalSummary.kmDone,
+      totalEarned: finalSummary.totalEarned,
+      perKm: finalSummary.perKm,
+      perHour: finalSummary.perHour,
+      hours: finalSummary.hours,
+    });
   }
   function handleReset() {
     setStatus("idle"); setStep("idle");
@@ -141,7 +158,7 @@ export default function WorkTimer({ isMobile, incomes = [], expenses = [], curre
         boxShadow: status==="running" ? `0 0 0 3px ${statusColor[status]}22` : "none",
         transition:"all .2s",
       }}>
-        {status==="idle"     && <><Play size={12} fill="#6b7280"/> {isMobile?"Jornada":"Iniciar Jornada"}</>}
+        {status==="idle"     && <><Play size={12} fill="#6b7280"/> {isMobile ? (t?.journeyShort || "Jornada") : (t?.startJourney || "Iniciar Jornada")}</>}
         {status==="running"  && <><div style={{width:7,height:7,borderRadius:"50%",background:"#16a34a",animation:"pulse 1.5s infinite"}}/>{formatTime(elapsed)}</>}
         {status==="paused"   && <><Pause size={12}/> {formatTime(elapsed)}</>}
         {status==="finished" && <><Flag size={12}/> {step==="summary"?"Ver resumo":"Finalizando..."}</>}

@@ -65,3 +65,42 @@ export async function deleteExpense(id) {
   const { error } = await supabase.from("expenses").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── JORNADAS ──
+export async function getJourneys(userId) {
+  const { data, error } = await supabase
+    .from("journeys")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export async function addJourney(userId, journey) {
+  const { data, error } = await supabase
+    .from("journeys")
+    .insert({
+      user_id: userId,
+      date: journey.date,
+      started_at: journey.startedAt || null,
+      ended_at: journey.endedAt || null,
+      elapsed_seconds: journey.elapsed || 0,
+      km_start: journey.kmStart || null,
+      km_end: journey.kmEnd || null,
+      km_done: journey.kmDone || 0,
+      total_earned: journey.totalEarned || 0,
+      per_km: journey.perKm || 0,
+      per_hour: journey.perHour || 0,
+      hours: journey.hours || 0,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteJourney(id) {
+  const { error } = await supabase.from("journeys").delete().eq("id", id);
+  if (error) throw error;
+}
