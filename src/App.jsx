@@ -20,6 +20,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [incomes, setIncomes] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [journeys, setJourneys] = useState([]);
   const [modal, setModal] = useState(null);
   const [activeNav, setActiveNav] = useState("dashboard");
   const [view, setView] = useState("dashboard");
@@ -27,6 +28,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
+
+  // Jornada activa (en curso) — vive en Supabase para sobrevivir a cerrar la app
+  const [activeSession, setActiveSession] = useState(null);
+  const [activeSessionLoaded, setActiveSessionLoaded] = useState(false);
 
   function showToast(msg) {
     setToastMsg(msg); setToast(true);
@@ -40,7 +45,11 @@ export default function App() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) loadUser(session.user);
-      else { setUser(null); setProfile(null); setLoading(false); }
+      else {
+        setUser(null); setProfile(null);
+        setActiveSession(null); setActiveSessionLoaded(false);
+        setLoading(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -60,12 +69,54 @@ export default function App() {
       setIncomes(ridesData.map(r => ({ ...r, rides: r.rides_count })));
       setExpenses(expensesData.map(e => ({ ...e, desc: e.description })));
       setJourneys(journeysData);
-      setIncomes(ridesData.map(r => ({ ...r, rides: r.rides_count })));
-      setExpenses(expensesData.map(e => ({ ...e, desc: e.description })));
+
+      // Cargar la jornada activa (si el usuario dejó una en curso)
+      await loadActiveSession(authUser.id);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadActiveSession(userId) {
+    try {
+      const { data, error } = await supabase
+        .from("active_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      setActiveSession(data || null);
+    } catch (err) {
+      console.error("Erro ao carregar sessão ativa:", err);
+      setActiveSession(null);
+    } finally {
+      setActiveSessionLoaded(true);
+    }
+  }
+
+  async function handleSaveActiveSession(data) {
+    try {
+      const { data: saved, error } = await supabase
+        .from("active_sessions")
+        .upsert({ user_id: user.id, ...data, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
+        .select()
+        .single();
+      if (error) throw error;
+      setActiveSession(saved);
+    } catch (err) {
+      console.error("Erro ao salvar sessão ativa:", err);
+    }
+  }
+
+  async function handleClearActiveSession() {
+    try {
+      const { error } = await supabase.from("active_sessions").delete().eq("user_id", user.id);
+      if (error) throw error;
+      setActiveSession(null);
+    } catch (err) {
+      console.error("Erro ao limpar sessão ativa:", err);
     }
   }
 
@@ -86,7 +137,8 @@ export default function App() {
   async function handleLogout() {
     await signOut();
     setUser(null); setProfile(null);
-    setIncomes([]); setExpenses([]);
+    setIncomes([]); setExpenses([]); setJourneys([]);
+    setActiveSession(null); setActiveSessionLoaded(false);
   }
 
   async function handleSaveIncome(data) {
@@ -111,22 +163,24 @@ export default function App() {
   }
 
   async function handleSaveJourney(data) {
-  try {
-    const saved = await addJourney(user.id, data);
-    setJourneys(p => [saved, ...p]);
-  } catch (err) {
-    console.error("Erro ao salvar jornada:", err);
+    try {
+      const saved = await addJourney(user.id, data);
+      setJourneys(p => [saved, ...p]);
+      showToast("✓ Jornada salva!");
+    } catch (err) {
+      console.error("Erro ao salvar jornada:", err);
+      showToast("❌ Erro ao salvar jornada");
+    }
+  }
 
-    async function handleUpdateGoals({ goalGross, goalNet }) {
-  try {
-    const updated = await updateGoals(user.id, { goalGross, goalNet });
-    setProfile(updated);
-  } catch (err) {
-    console.error("Erro ao salvar metas:", err);
+  async function handleUpdateGoals({ goalGross, goalNet }) {
+    try {
+      const updated = await updateGoals(user.id, { goalGross, goalNet });
+      setProfile(updated);
+    } catch (err) {
+      console.error("Erro ao salvar metas:", err);
+    }
   }
-}
-  }
-}
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9fafb", fontFamily: "system-ui" }}>
@@ -203,6 +257,11 @@ export default function App() {
               currency={currency}
               onSaveIncome={handleSaveIncome}
               onSaveExpense={handleSaveExpense}
+              onSaveJourney={handleSaveJourney}
+              activeSession={activeSession}
+              activeSessionLoaded={activeSessionLoaded}
+              onSaveActiveSession={handleSaveActiveSession}
+              onClearActiveSession={handleClearActiveSession}
             />
           </div>
         </div> 

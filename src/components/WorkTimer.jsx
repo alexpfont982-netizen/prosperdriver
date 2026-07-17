@@ -2,7 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { Play, Pause, Flag, MapPin, Plus, X } from "lucide-react";
 import { PLAT_CONFIG } from "../data/seed";
 
-export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], currency, onSaveIncome, onSaveExpense, onSaveJourney }) {
+export default function WorkTimer({
+  t, isMobile, incomes = [], expenses = [], currency,
+  onSaveIncome, onSaveExpense, onSaveJourney,
+  activeSession, activeSessionLoaded,
+  onSaveActiveSession, onClearActiveSession,
+}) {
   const [status, setStatus]           = useState("idle");
   const [elapsed, setElapsed]         = useState(0);
   const [kmStart, setKmStart]         = useState("");
@@ -14,16 +19,83 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
   const [earnings, setEarnings]       = useState([{ platform:"uber", amount:"" }]);
   const [dayExpenses, setDayExpenses] = useState([]);
   const intervalRef                   = useRef(null);
-  const lastTickRef                   = useRef(null);
 
+  // accumulatedElapsed = segundos ya contabilizados antes del tramo "running" actual
+  // runStartAt = timestamp (ms) en que empezó el tramo "running" actual (null si no está corriendo)
+  const accumulatedElapsedRef = useRef(0);
+  const runStartAtRef         = useRef(null);
+  const hydratedRef           = useRef(false);
+
+  // Envía el estado actual de la jornada a Supabase (tabla active_sessions).
+  // Se llama en cada transición importante, no en cada tecla presionada, para no saturar de writes.
+  function persist(overrides = {}) {
+    const merged = {
+      status, step, kmStart, kmEnd,
+      startedAt: startedAt ? startedAt.toISOString() : null,
+      accumulatedElapsed: accumulatedElapsedRef.current,
+      runStartAt: runStartAtRef.current,
+      earnings, dayExpenses, summary,
+      ...overrides,
+    };
+
+    if (merged.status === "idle" && !merged.summary) {
+      onClearActiveSession?.();
+      return;
+    }
+
+    onSaveActiveSession?.({
+      status: merged.status,
+      step: merged.step,
+      km_start: merged.kmStart !== "" && merged.kmStart != null ? parseFloat(merged.kmStart) : null,
+      km_end: merged.kmEnd !== "" && merged.kmEnd != null ? parseFloat(merged.kmEnd) : null,
+      started_at: merged.startedAt,
+      accumulated_elapsed: merged.accumulatedElapsed,
+      run_start_at: merged.runStartAt,
+      earnings: merged.earnings,
+      day_expenses: merged.dayExpenses,
+      summary: merged.summary,
+    });
+  }
+
+  // HIDRATACIÓN: cuando App.jsx termina de cargar la sesión activa desde Supabase, restaurarla aquí
+  useEffect(() => {
+    if (!activeSessionLoaded || hydratedRef.current) return;
+    hydratedRef.current = true;
+
+    const saved = activeSession;
+    if (saved && saved.status && saved.status !== "idle") {
+      setStatus(saved.status);
+      setStep(saved.step || saved.status);
+      setKmStart(saved.km_start != null ? String(saved.km_start) : "");
+      setKmEnd(saved.km_end != null ? String(saved.km_end) : "");
+      setStartedAt(saved.started_at ? new Date(saved.started_at) : null);
+      setEarnings(saved.earnings?.length ? saved.earnings : [{ platform:"uber", amount:"" }]);
+      setDayExpenses(saved.day_expenses || []);
+      setSummary(saved.summary || null);
+
+      accumulatedElapsedRef.current = saved.accumulated_elapsed || 0;
+      runStartAtRef.current = saved.run_start_at ? parseInt(saved.run_start_at, 10) : null;
+
+      if (saved.status === "running" && runStartAtRef.current) {
+        const extra = Math.floor((Date.now() - runStartAtRef.current) / 1000);
+        setElapsed(accumulatedElapsedRef.current + Math.max(extra, 0));
+      } else {
+        setElapsed(accumulatedElapsedRef.current);
+      }
+
+      // Muestra el panel de nuevo para que el usuario vea que su jornada sigue activa
+      setShowPanel(true);
+    }
+  }, [activeSessionLoaded, activeSession]);
+
+  // TICKER: recalcula elapsed cada segundo a partir de timestamps reales (evita desfases por segundo plano)
   useEffect(() => {
     if (status === "running") {
-      lastTickRef.current = Date.now();
       intervalRef.current = setInterval(() => {
-        const now  = Date.now();
-        const diff = Math.floor((now - lastTickRef.current) / 1000);
-        lastTickRef.current = now;
-        setElapsed(p => p + diff);
+        const extra = runStartAtRef.current
+          ? Math.floor((Date.now() - runStartAtRef.current) / 1000)
+          : 0;
+        setElapsed(accumulatedElapsedRef.current + Math.max(extra, 0));
       }, 1000);
     } else {
       clearInterval(intervalRef.current);
@@ -33,25 +105,72 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
 
   function handleStart() {
     if (!kmStart) return;
+    const now = new Date();
+    accumulatedElapsedRef.current = 0;
+    runStartAtRef.current = Date.now();
     setStatus("running"); setStep("running");
-    setStartedAt(new Date()); setElapsed(0);
+    setStartedAt(now); setElapsed(0);
+    persist({
+      status: "running", step: "running",
+      startedAt: now.toISOString(),
+      accumulatedElapsed: 0, runStartAt: runStartAtRef.current,
+    });
   }
-  function handlePause()  { setStatus("paused");  setStep("paused"); }
-  function handleResume() { setStatus("running"); setStep("running"); }
+
+  function handlePause() {
+    const extra = runStartAtRef.current ? Math.floor((Date.now() - runStartAtRef.current) / 1000) : 0;
+    accumulatedElapsedRef.current += Math.max(extra, 0);
+    runStartAtRef.current = null;
+    setStatus("paused"); setStep("paused");
+    setElapsed(accumulatedElapsedRef.current);
+    persist({
+      status: "paused", step: "paused",
+      accumulatedElapsed: accumulatedElapsedRef.current, runStartAt: null,
+    });
+  }
+
+  function handleResume() {
+    runStartAtRef.current = Date.now();
+    setStatus("running"); setStep("running");
+    persist({
+      status: "running", step: "running",
+      accumulatedElapsed: accumulatedElapsedRef.current, runStartAt: runStartAtRef.current,
+    });
+  }
+
   function handleFinish() {
+    const extra = runStartAtRef.current ? Math.floor((Date.now() - runStartAtRef.current) / 1000) : 0;
+    accumulatedElapsedRef.current += Math.max(extra, 0);
+    runStartAtRef.current = null;
     setStatus("finished");
     clearInterval(intervalRef.current);
+    setElapsed(accumulatedElapsedRef.current);
     setStep("km");
+    persist({
+      status: "finished", step: "km",
+      accumulatedElapsed: accumulatedElapsedRef.current, runStartAt: null,
+    });
   }
+
   function handleConfirmKm() {
     if (!kmEnd) return;
     setStep("earnings");
+    persist({ step: "earnings", kmEnd });
   }
+
   function addEarning() {
-    setEarnings(p => [...p, { platform:"uber", amount:"" }]);
+    setEarnings(p => {
+      const next = [...p, { platform:"uber", amount:"" }];
+      persist({ earnings: next });
+      return next;
+    });
   }
   function removeEarning(i) {
-    setEarnings(p => p.filter((_,idx) => idx !== i));
+    setEarnings(p => {
+      const next = p.filter((_,idx) => idx !== i);
+      persist({ earnings: next });
+      return next;
+    });
   }
   function updateEarning(i, field, val) {
     setEarnings(p => p.map((e,idx) => idx===i ? {...e,[field]:val} : e));
@@ -70,6 +189,10 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
       }
     }
     setStep("expenses");
+    persist({ step: "expenses", earnings });
+  }
+  function updateDayExpense(i, field, val) {
+    setDayExpenses(p => p.map((x,idx) => idx===i ? {...x,[field]:val} : x));
   }
   async function handleConfirmExpenses() {
     const today = new Date().toISOString().slice(0,10);
@@ -94,8 +217,9 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
     const finalSummary = { kmDone: kmDone > 0 ? kmDone : 0, hours, elapsed, totalEarned, perKm, perHour };
     setSummary(finalSummary);
     setStep("summary");
+    persist({ step: "summary", summary: finalSummary, dayExpenses });
 
-    // Guardar la jornada en Supabase para poder consultarla después
+    // Guardar la jornada finalizada en la tabla journeys, para poder consultarla después
     const today = new Date().toISOString().slice(0,10);
     await onSaveJourney?.({
       date: today,
@@ -118,6 +242,9 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
     setSummary(null);
     setEarnings([{ platform:"uber", amount:"" }]);
     setDayExpenses([]);
+    accumulatedElapsedRef.current = 0;
+    runStartAtRef.current = null;
+    onClearActiveSession?.();
   }
   function formatTime(secs) {
     const h = Math.floor(secs / 3600);
@@ -351,7 +478,7 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
                       padding:10, background:"#f9fafb", borderRadius:10, border:"1px solid #e5e7eb" }}>
                       <div style={{ display:"flex", gap:8 }}>
                         <select value={e.category}
-                          onChange={ev => setDayExpenses(p => p.map((x,idx) => idx===i?{...x,category:ev.target.value}:x))}
+                          onChange={ev => updateDayExpense(i, "category", ev.target.value)}
                           style={{ ...inp, flex:1 }}>
                           <option value="fuel">⛽ Combustível</option>
                           <option value="maintenance">🔧 Manutenção</option>
@@ -362,23 +489,23 @@ export default function WorkTimer({ t, isMobile, incomes = [], expenses = [], cu
                           <option value="insurance">🛡️ Seguro</option>
                           <option value="other">📦 Outros</option>
                         </select>
-                        <button onClick={() => setDayExpenses(p => p.filter((_,idx) => idx!==i))}
+                        <button onClick={() => setDayExpenses(p => { const next = p.filter((_,idx) => idx!==i); persist({ dayExpenses: next }); return next; })}
                           style={{ background:"none", border:"none", cursor:"pointer", color:"#9ca3af" }}>
                           <X size={14}/>
                         </button>
                       </div>
                       <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                         <input type="number" placeholder="Valor" value={e.amount}
-                          onChange={ev => setDayExpenses(p => p.map((x,idx) => idx===i?{...x,amount:ev.target.value}:x))}
+                          onChange={ev => updateDayExpense(i, "amount", ev.target.value)}
                           style={{ ...inp, flex:1 }}/>
                         <span style={{ fontSize:11, color:"#9ca3af" }}>{sym}</span>
                       </div>
                       <input placeholder="Descrição (opcional)" value={e.desc}
-                        onChange={ev => setDayExpenses(p => p.map((x,idx) => idx===i?{...x,desc:ev.target.value}:x))}
+                        onChange={ev => updateDayExpense(i, "desc", ev.target.value)}
                         style={{ ...inp, width:"100%", fontWeight:400 }}/>
                     </div>
                   ))}
-                  <button onClick={() => setDayExpenses(p => [...p, { category:"fuel", amount:"", desc:"" }])} style={{
+                  <button onClick={() => setDayExpenses(p => { const next = [...p, { category:"fuel", amount:"", desc:"" }]; persist({ dayExpenses: next }); return next; })} style={{
                     display:"flex", alignItems:"center", gap:6, padding:"8px",
                     borderRadius:8, border:"1px dashed #d1d5db",
                     background:"#f9fafb", color:"#6b7280", fontSize:12,
