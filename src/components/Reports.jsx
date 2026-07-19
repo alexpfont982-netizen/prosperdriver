@@ -1,6 +1,6 @@
 export default function Reports({ t, journeys = [], expenses = [], isMobile, currency }) {
   const sym = currency?.symbol || "R$";
-  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0 });
+  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   // Solo los últimos 3 meses
   const threeMonthsAgo = new Date();
@@ -92,12 +92,13 @@ export default function Reports({ t, journeys = [], expenses = [], isMobile, cur
                         {fmt(net)}
                       </div>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5,1fr)", gap: 8 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(6,1fr)", gap: 8 }}>
                       {[
                         { label: t.grossRevenue,  val: fmt(j.total_earned || 0) },
                         { label: t.totalExpenses, val: fmt(dayExpTotal) },
                         { label: "Km",            val: `${Number(j.km_done || 0).toFixed(1)} km` },
                         { label: t.hours,         val: `${Number(j.hours || 0).toFixed(1)}h` },
+                        { label: t.perKm,         val: fmt(j.per_km || 0) },
                         { label: t.perHour,       val: fmt(j.per_hour || 0) },
                       ].map((item, i) => (
                         <div key={i} style={{ background: "#f9fafb", borderRadius: 8, padding: "8px 10px" }}>

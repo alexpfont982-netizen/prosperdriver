@@ -1,10 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLAT_CONFIG, CAT_CONFIG } from "../data/seed";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function History({ t, incomes, expenses, journeys = [], isMobile, currency }) {
   const [tab, setTab]       = useState("incomes");
   const [filter, setFilter] = useState("all");
+  const [grown, setGrown]   = useState(false);
+
+  // Dispara el efecto de crecimiento de las barras al abrir la sección de Histórico
+  useEffect(() => {
+    const id = setTimeout(() => setGrown(true), 50);
+    return () => clearTimeout(id);
+  }, []);
 
   const sym = currency?.symbol || "R$";
   const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -21,6 +28,19 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
   const filteredExpenses = filter === "all"
     ? expenses
     : expenses.filter(e => e.category === filter);
+
+  // ── DESPESAS POR CATEGORIA (donut) ──
+  const categoryTotals = {};
+  expenses.forEach(e => {
+    categoryTotals[e.category] = (categoryTotals[e.category] || 0) + Number(e.amount || 0);
+  });
+  const donutData = Object.entries(categoryTotals)
+    .map(([cat, value]) => {
+      const ci = CAT_CONFIG[cat] || { label: cat, color: "#888" };
+      return { key: cat, name: t[ci.label] || ci.label, value, color: ci.color };
+    })
+    .sort((a, b) => b.value - a.value);
+  const totalExpensesAll = donutData.reduce((a, d) => a + d.value, 0);
 
   // ── DATOS GRÁFICO (últimos 7 días) ──
   const last7 = [...Array(7)].map((_,i) => {
@@ -103,6 +123,50 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
         </div>
       </div>
 
+      {/* DESPESAS POR CATEGORIA (DONUT) */}
+      <div style={panel}>
+        <div style={{ fontWeight: 600, fontSize: 15, color: "#111827", marginBottom: 16 }}>
+          {t.expensesByCategory}
+        </div>
+        {donutData.length === 0 ? (
+          <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "40px 0" }}>Sem dados ainda</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: "center", gap: 20 }}>
+            <div style={{ width: isMobile ? "100%" : 220, flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={55}
+                    outerRadius={82}
+                    paddingAngle={2}
+                    strokeWidth={0}
+                  >
+                    {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+              {donutData.map((d, i) => {
+                const pct = totalExpensesAll > 0 ? ((d.value / totalExpensesAll) * 100).toFixed(0) : 0;
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: d.color, flexShrink: 0 }} />
+                    <div style={{ fontSize: 12, flex: 1, color: "#374151" }}>{d.name}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", width: 34, textAlign: "right" }}>{pct}%</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, minWidth: 65, textAlign: "right", color: "#111827" }}>{fmt(d.value)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* GRÁFICO EVOLUCIÓN */}
       <div style={panel}>
         <div style={{ fontWeight:600, fontSize:15, color:"#111827", marginBottom:4 }}>
@@ -126,14 +190,15 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
                 ].map((bar, bi) => (
                   <div key={bi} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", height:"100%", gap:3 }}>
                     {bar.value > 0 && (
-                      <div style={{ fontSize:8, color:"#6b7280", fontWeight:600, whiteSpace:"nowrap" }}>
+                      <div style={{ fontSize:10, color:"#6b7280", fontWeight:600, whiteSpace:"nowrap" }}>
                         {fmt(bar.value)}
                       </div>
                     )}
                     <div style={{
-                      width:"100%", borderRadius:"3px 3px 0 0", minHeight:3,
-                      height: `${(bar.value/maxVal*100)}%`,
+                      width:"100%", borderRadius:"3px 3px 0 0", minHeight: grown ? 3 : 0,
+                      height: grown ? `${(bar.value/maxVal*100)}%` : "0%",
                       background: bar.gradient,
+                      transition: `height .7s cubic-bezier(.16,1,.3,1) ${(i * 0.06) + (bi * 0.03)}s`,
                     }}/>
                   </div>
                 ))}
