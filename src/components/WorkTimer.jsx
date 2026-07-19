@@ -194,21 +194,22 @@ export default function WorkTimer({
   function updateDayExpense(i, field, val) {
     setDayExpenses(p => p.map((x,idx) => idx===i ? {...x,[field]:val} : x));
   }
-  async function handleConfirmExpenses() {
-    const today = new Date().toISOString().slice(0,10);
+  async function buildSummary() {
+    // Guardar cualquier gasto ingresado en este paso ANTES de armar el resumen.
+    // Esto corre sin importar si el usuario tocó "Salvar e Ver Resumo" o "Pular",
+    // para que nunca se pierda un gasto ya escrito.
+    const todayForExpenses = new Date().toISOString().slice(0,10);
     for (const e of dayExpenses) {
       if (e.amount && parseFloat(e.amount) > 0) {
         await onSaveExpense?.({
           category: e.category,
           amount: parseFloat(e.amount),
           desc: e.desc || e.category,
-          date: today,
+          date: todayForExpenses,
         });
       }
     }
-    buildSummary();
-  }
-  async function buildSummary() {
+
     const kmDone      = parseFloat(kmEnd) - parseFloat(kmStart);
     const hours       = elapsed / 3600;
     const totalEarned = earnings.reduce((a,e) => a + (parseFloat(e.amount)||0), 0);
@@ -514,7 +515,7 @@ export default function WorkTimer({
                     <Plus size={13}/> Adicionar gasto
                   </button>
                   <div style={{ display:"flex", gap:8 }}>
-                    <button onClick={handleConfirmExpenses} style={{
+                    <button onClick={buildSummary} style={{
                       flex:2, padding:"11px", borderRadius:10, border:"none",
                       background:"#16a34a", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
                     }}>

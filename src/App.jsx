@@ -11,6 +11,7 @@ import Login from "./components/Login";
 import WorkTimer from "./components/WorkTimer";
 import { Menu } from "lucide-react";
 import History from "./components/History";
+import Reports from "./components/Reports";
 import MonthlyGoals from "./components/MonthlyGoals";
 
 export default function App() {
@@ -270,7 +271,10 @@ export default function App() {
           <Dashboard t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
         )}
         {view === "history" && (
-          <History t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+          <History t={t} incomes={incomes} expenses={expenses} journeys={journeys} isMobile={isMobile} currency={currency} />
+        )}
+        {view === "reports" && (
+          <Reports t={t} journeys={journeys} expenses={expenses} isMobile={isMobile} currency={currency} />
         )}
         {view === "monthlyGoals" && (
           <MonthlyGoals t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />

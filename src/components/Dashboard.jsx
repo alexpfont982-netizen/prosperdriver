@@ -42,7 +42,10 @@ export default function Dashboard({ t, incomes, expenses, isMobile, currency }) 
   todayIncomes.forEach(i => { platTotals[i.platform] = (platTotals[i.platform]||0) + i.amount; });
   const maxPlat = Math.max(...Object.values(platTotals), 1);
 
-  const recentExp = [...expenses].reverse().slice(0, isMobile ? 3 : 5);
+  // NOTA: `expenses` ya viene ordenado del más reciente al más antiguo
+  // (cada gasto nuevo se agrega al inicio del arreglo en App.jsx), así que
+  // tomamos los primeros N directamente — sin invertir el orden.
+  const recentExp = expenses.slice(0, isMobile ? 3 : 5);
 
   const panel = {
     background: "#fff", border: "1px solid #e5e7eb",

@@ -1,4 +1,4 @@
-import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, X, Menu, TrendingUp, History } from "lucide-react";
+import { LayoutDashboard, PlusCircle, Receipt, BarChart2, Target, X, Menu, TrendingUp, History, FileText } from "lucide-react";
 import { useDevice } from "../hooks/useDevice";
 import logoMark from "../assets/logo-mark.png";
 import avatarMale from "../assets/avatar-male.png";
@@ -11,6 +11,7 @@ const navItems = [
   { id: "newRide",       icon: TrendingUp },
   { id: "newExpense",    icon: Receipt },
   { id: "history",       icon: History },
+  { id: "reports",       icon: FileText },
   { id: "monthlyGoals",  icon: Target },
 ];
 
