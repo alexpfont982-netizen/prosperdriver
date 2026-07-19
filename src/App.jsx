@@ -277,7 +277,7 @@ export default function App() {
           <Reports t={t} journeys={journeys} expenses={expenses} isMobile={isMobile} currency={currency} />
         )}
         {view === "monthlyGoals" && (
-          <MonthlyGoals t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+          <MonthlyGoals t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} profile={profile} onUpdateGoals={handleUpdateGoals} />
         )}
       </main>
 

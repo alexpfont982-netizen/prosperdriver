@@ -51,11 +51,17 @@ export async function getProfile(userId) {
   return data;
 }
 
-// ACTUALIZAR METAS DO MÊS
-export async function updateGoals(userId, { goalGross, goalNet }) {
+// ACTUALIZAR METAS (mês e dia)
+// goalGrossDay / goalNetDay: pasar null para que la meta diaria sea automática (mensual ÷ días del mes)
+export async function updateGoals(userId, { goalGross, goalNet, goalGrossDay = null, goalNetDay = null }) {
   const { data, error } = await supabase
     .from("profiles")
-    .update({ goal_gross: goalGross, goal_net: goalNet })
+    .update({
+      goal_gross: goalGross,
+      goal_net: goalNet,
+      goal_gross_day: goalGrossDay,
+      goal_net_day: goalNetDay,
+    })
     .eq("id", userId)
     .select()
     .single();

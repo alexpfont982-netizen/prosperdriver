@@ -7,7 +7,7 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
   const [filter, setFilter] = useState("all");
 
   const sym = currency?.symbol || "R$";
-  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0 });
+  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   // ── GANANCIAS agrupadas por fecha ──
   const incomesByDate = {};
@@ -120,16 +120,23 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
           {last7.map((d,i) => (
             <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, height:"100%", justifyContent:"flex-end" }}>
               <div style={{ width:"100%", display:"flex", gap:2, alignItems:"flex-end", height:"100%" }}>
-                <div style={{
-                  flex:1, borderRadius:"3px 3px 0 0", minHeight:3,
-                  height: `${(d.income/maxVal*100)}%`,
-                  background: "linear-gradient(180deg,#2563eb,#bfdbfe)",
-                }}/>
-                <div style={{
-                  flex:1, borderRadius:"3px 3px 0 0", minHeight:3,
-                  height: `${(d.expense/maxVal*100)}%`,
-                  background: "linear-gradient(180deg,#ea580c,#fed7aa)",
-                }}/>
+                {[
+                  { value: d.income, gradient: "linear-gradient(180deg,#2563eb,#bfdbfe)" },
+                  { value: d.expense, gradient: "linear-gradient(180deg,#ea580c,#fed7aa)" },
+                ].map((bar, bi) => (
+                  <div key={bi} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", height:"100%", gap:3 }}>
+                    {bar.value > 0 && (
+                      <div style={{ fontSize:8, color:"#6b7280", fontWeight:600, whiteSpace:"nowrap" }}>
+                        {fmt(bar.value)}
+                      </div>
+                    )}
+                    <div style={{
+                      width:"100%", borderRadius:"3px 3px 0 0", minHeight:3,
+                      height: `${(bar.value/maxVal*100)}%`,
+                      background: bar.gradient,
+                    }}/>
+                  </div>
+                ))}
               </div>
               <div style={{ fontSize:9, color:"#9ca3af", textAlign:"center" }}>{d.label}</div>
             </div>

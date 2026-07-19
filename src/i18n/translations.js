@@ -46,6 +46,9 @@ export const translations = {
     reports: "Reportes",
     reportsSubtitle: "Reportes diarios de tus jornadas de los últimos 3 meses",
     noReports: "Todavía no hay reportes.",
+    dailyGoals: "Metas del Día",
+    automaticGoal: "Automática (meta mensual ÷ días)",
+    goalsNav: "Metas",
   },
   pt: {
     appName: "ProsperDriver",
@@ -94,6 +97,9 @@ export const translations = {
     reports: "Relatórios",
     reportsSubtitle: "Relatórios diários das suas jornadas dos últimos 3 meses",
     noReports: "Ainda não há relatórios.",
+    dailyGoals: "Metas do Dia",
+    automaticGoal: "Automática (meta mensal ÷ dias)",
+    goalsNav: "Metas",
   },
   en: {
     appName: "ProsperDriver",
@@ -142,5 +148,8 @@ export const translations = {
     reports: "Reports",
     reportsSubtitle: "Daily reports from your journeys over the last 3 months",
     noReports: "No reports yet.",
+    dailyGoals: "Daily Goals",
+    automaticGoal: "Automatic (monthly goal ÷ days)",
+    goalsNav: "Goals",
   },
 };

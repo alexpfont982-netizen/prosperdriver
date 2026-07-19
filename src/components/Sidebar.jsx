@@ -12,7 +12,7 @@ const navItems = [
   { id: "newExpense",    icon: Receipt },
   { id: "history",       icon: History },
   { id: "reports",       icon: FileText },
-  { id: "monthlyGoals",  icon: Target },
+  { id: "monthlyGoals",  icon: Target, labelKey: "goalsNav" },
 ];
 
 function avatarForGender(gender) {
@@ -87,7 +87,7 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
 
         {/* NAV */}
         <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
-          {navItems.map(({ id, icon: Icon }) => {
+          {navItems.map(({ id, icon: Icon, labelKey }) => {
             const isAction = id === "newRide" || id === "newExpense";
             const isActive = !isAction && activeNav === id;
             return (
@@ -105,7 +105,7 @@ export default function Sidebar({ t, lang, setLang, activeNav, setActiveNav, onN
                 border: isActive ? "1px solid #dbeafe" : "1px solid transparent",
               }}>
                 <Icon size={16} />
-                {t[id] || id}
+                {t[labelKey || id] || id}
               </div>
             );
           })}
