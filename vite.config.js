@@ -8,6 +8,14 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
+      workbox: {
+        // Activa el Service Worker nuevo de inmediato, sin esperar a que
+        // se cierren todas las pestañas/instancias de la app abiertas.
+        skipWaiting: true,
+        clientsClaim: true,
+        // Borra automáticamente las cachés de versiones anteriores.
+        cleanupOutdatedCaches: true,
+      },
       manifest: {
         name: 'ProsperDriver',
         short_name: 'ProsperDriver',
