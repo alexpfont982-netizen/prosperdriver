@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Play, Pause, Flag, MapPin, Plus, X } from "lucide-react";
 import { PLAT_CONFIG } from "../data/seed";
+import { getLocalDateStr } from "../lib/dateUtils";
 
 export default function WorkTimer({
   t, isMobile, incomes = [], expenses = [], currency,
@@ -176,7 +177,7 @@ export default function WorkTimer({
     setEarnings(p => p.map((e,idx) => idx===i ? {...e,[field]:val} : e));
   }
   async function handleConfirmEarnings() {
-    const today = new Date().toISOString().slice(0,10);
+    const today = getLocalDateStr();
     for (const e of earnings) {
       if (e.amount && parseFloat(e.amount) > 0) {
         await onSaveIncome?.({
@@ -198,7 +199,7 @@ export default function WorkTimer({
     // Guardar cualquier gasto ingresado en este paso ANTES de armar el resumen.
     // Esto corre sin importar si el usuario tocó "Salvar e Ver Resumo" o "Pular",
     // para que nunca se pierda un gasto ya escrito.
-    const todayForExpenses = new Date().toISOString().slice(0,10);
+    const todayForExpenses = getLocalDateStr();
     for (const e of dayExpenses) {
       if (e.amount && parseFloat(e.amount) > 0) {
         await onSaveExpense?.({
@@ -221,7 +222,7 @@ export default function WorkTimer({
     persist({ step: "summary", summary: finalSummary, dayExpenses });
 
     // Guardar la jornada finalizada en la tabla journeys, para poder consultarla después
-    const today = new Date().toISOString().slice(0,10);
+    const today = getLocalDateStr();
     await onSaveJourney?.({
       date: today,
       startedAt: startedAt ? startedAt.toISOString() : null,
@@ -254,7 +255,7 @@ export default function WorkTimer({
     return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
   }
 
-  const today = new Date().toISOString().slice(0,10);
+  const today = getLocalDateStr();
   const allDayExpenses = [
     ...expenses.filter(e => e.date?.slice(0,10) === today),
     ...dayExpenses.filter(e => e.amount && parseFloat(e.amount) > 0),

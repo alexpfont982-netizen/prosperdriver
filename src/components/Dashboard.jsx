@@ -1,10 +1,34 @@
+import { useState, useEffect, useRef } from "react";
 import { PLAT_CONFIG, CAT_CONFIG } from "../data/seed";
+import { getLocalDateStr } from "../lib/dateUtils";
 
-export default function Dashboard({ t, incomes, expenses, isMobile, currency }) {
+const LOCALE_MAP = { es: "es-ES", pt: "pt-BR", en: "en-US" };
+
+// Dispara `inView = true` la primera vez que el elemento entra en pantalla, y no vuelve a cambiar
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    }, { threshold });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+export default function Dashboard({ t, lang, incomes, expenses, isMobile, currency }) {
+  const locale = LOCALE_MAP[lang] || "pt-BR";
   const sym = currency?.symbol || "R$";
-  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0 });
+  const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = getLocalDateStr();
   const todayIncomes  = incomes.filter(i => i.date === todayStr);
   const todayExpenses = expenses.filter(e => e.date === todayStr);
 
@@ -13,29 +37,22 @@ export default function Dashboard({ t, incomes, expenses, isMobile, currency }) 
   const net    = gross - expTot;
   const rides  = todayIncomes.reduce((a,i) => a + i.rides, 0);
 
-  // FATURAMENTO SEMANAL (últimos 8 dias, calculado a partir dos ganhos reais)
-  const weekDayLabels = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-  const weeklyData = (() => {
-    const days = [];
-    const today = new Date();
-    for (let i = 7; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      days.push({
-        key,
-        label: i === 0 ? "Hj" : weekDayLabels[d.getDay()],
-        total: 0,
-      });
-    }
-    const map = {};
-    days.forEach(d => { map[d.key] = d; });
-    incomes.forEach(i => {
-      if (map[i.date]) map[i.date].total += i.amount;
-    });
-    return days;
-  })();
-  const maxBar = Math.max(...weeklyData.map(d => d.total), 1);
+  const [evoRef, evoInView] = useInView();
+
+  // EVOLUÇÃO DOS ÚLTIMOS 7 DIAS (ganhos vs gastos, movido desde Histórico)
+  const last7 = [...Array(7)].map((_,i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const key = getLocalDateStr(d);
+    const dayIncomes  = incomes.filter(r => r.date === key);
+    const dayExpenses = expenses.filter(e => e.date === key);
+    return {
+      label: d.toLocaleDateString(locale, { weekday: "short" }),
+      income:  dayIncomes.reduce((a,r) => a + r.amount, 0),
+      expense: dayExpenses.reduce((a,e) => a + e.amount, 0),
+    };
+  });
+  const maxVal = Math.max(...last7.map(d => Math.max(d.income, d.expense)), 1);
 
   // POR PLATAFORMA (somente hoje)
   const platTotals = {};
@@ -81,23 +98,44 @@ export default function Dashboard({ t, incomes, expenses, isMobile, currency }) 
 
       {/* CHART + PLATFORMS */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr", gap: isMobile ? 14 : 16 }}>
-        <div style={panel}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>{t.weeklyRevenue}</div>
-            <div style={{ fontSize: 12, color: "#2563eb", cursor: "pointer" }}>Ver tudo</div>
+        <div ref={evoRef} style={panel}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>Evolução dos últimos 7 dias</div>
           </div>
-          {weeklyData.every(d => d.total === 0) ? (
+          <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: "#2563eb" }} /> {t.grossRevenue}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: "#ea580c" }} /> {t.totalExpenses}
+            </div>
+          </div>
+          {last7.every(d => d.income === 0 && d.expense === 0) ? (
             <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "30px 0" }}>Sem dados ainda</div>
           ) : (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 5 : 8, height: isMobile ? 90 : 110 }}>
-              {weeklyData.map((d,i) => (
-                <div key={d.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
-                  <div style={{
-                    width: "100%", borderRadius: "4px 4px 0 0",
-                    height: `${(d.total/maxBar*100)}%`,
-                    background: i === weeklyData.length-1 ? "linear-gradient(180deg,#2563eb,#bfdbfe)" : "linear-gradient(180deg,#93c5fd,#dbeafe)",
-                    minHeight: d.total > 0 ? 4 : 0,
-                  }} />
+            <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 5 : 8, height: isMobile ? 100 : 120 }}>
+              {last7.map((d, i) => (
+                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
+                  <div style={{ width: "100%", display: "flex", gap: 2, alignItems: "flex-end", height: "100%" }}>
+                    {[
+                      { value: d.income, gradient: "linear-gradient(180deg,#2563eb,#bfdbfe)" },
+                      { value: d.expense, gradient: "linear-gradient(180deg,#ea580c,#fed7aa)" },
+                    ].map((bar, bi) => (
+                      <div key={bi} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 3 }}>
+                        {bar.value > 0 && (
+                          <div style={{ fontSize: 9, color: "#6b7280", fontWeight: 600, whiteSpace: "nowrap" }}>
+                            {fmt(bar.value)}
+                          </div>
+                        )}
+                        <div style={{
+                          width: "100%", borderRadius: bar.value > 0 ? "3px 3px 0 0" : 0, minHeight: evoInView ? 3 : 0,
+                          height: evoInView ? `${(bar.value / maxVal * 100)}%` : "0%",
+                          background: bar.gradient,
+                          transition: `height .875s cubic-bezier(.16,1,.3,1) ${(i * 0.075) + (bi * 0.0375)}s`,
+                        }} />
+                      </div>
+                    ))}
+                  </div>
                   <div style={{ fontSize: 8, color: "#9ca3af" }}>{d.label}</div>
                 </div>
               ))}

@@ -1,11 +1,16 @@
-export default function Reports({ t, journeys = [], expenses = [], isMobile, currency }) {
+import { getLocalDateStr } from "../lib/dateUtils";
+
+const LOCALE_MAP = { es: "es-ES", pt: "pt-BR", en: "en-US" };
+
+export default function Reports({ t, lang, journeys = [], expenses = [], isMobile, currency }) {
+  const locale = LOCALE_MAP[lang] || "pt-BR";
   const sym = currency?.symbol || "R$";
   const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   // Solo los últimos 3 meses
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  const cutoff = threeMonthsAgo.toISOString().slice(0, 10);
+  const cutoff = getLocalDateStr(threeMonthsAgo);
   const recentJourneys = journeys.filter(j => j.date >= cutoff);
 
   // Agrupar por mes (YYYY-MM)
@@ -47,7 +52,12 @@ export default function Reports({ t, journeys = [], expenses = [], isMobile, cur
           const monthTotalEarned = monthJourneys.reduce((a, j) => a + Number(j.total_earned || 0), 0);
           const monthTotalKm     = monthJourneys.reduce((a, j) => a + Number(j.km_done || 0), 0);
           const monthTotalHours  = monthJourneys.reduce((a, j) => a + Number(j.hours || 0), 0);
-          const monthLabel = new Date(monthKey + "-02T12:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+          const daysWorked       = monthJourneys.length;
+          const avgKmPerDay      = daysWorked > 0 ? monthTotalKm / daysWorked : 0;
+          const avgHoursPerDay   = daysWorked > 0 ? monthTotalHours / daysWorked : 0;
+          const avgPerKm         = monthTotalKm > 0 ? monthTotalEarned / monthTotalKm : 0;
+          const avgPerHour       = monthTotalHours > 0 ? monthTotalEarned / monthTotalHours : 0;
+          const monthLabel = new Date(monthKey + "-02T12:00:00").toLocaleDateString(locale, { month: "long", year: "numeric" });
 
           return (
             <div key={monthKey} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -76,6 +86,18 @@ export default function Reports({ t, journeys = [], expenses = [], isMobile, cur
                   <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{t.hours}</div>
                   <div style={{ fontWeight: 700, fontSize: 18, color: "#111827" }}>{monthTotalHours.toFixed(1)}h</div>
                 </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{t.avgKmDay}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>{avgKmPerDay.toFixed(1)} km</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{t.avgHoursDay}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: "#111827" }}>{avgHoursPerDay.toFixed(1)}h</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", marginBottom: 4 }}>{t.perKm} / {t.perHour}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#2563eb" }}>{fmt(avgPerKm)} · {fmt(avgPerHour)}</div>
+                </div>
               </div>
 
               {/* REPORTES DIARIOS DEL MES */}
@@ -86,7 +108,7 @@ export default function Reports({ t, journeys = [], expenses = [], isMobile, cur
                   <div key={j.id} style={panel}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                       <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>
-                        {new Date(j.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                        {new Date(j.date + "T12:00:00").toLocaleDateString(locale, { weekday: "long", day: "2-digit", month: "long" })}
                       </div>
                       <div style={{ fontWeight: 700, fontSize: 16, color: net >= 0 ? "#16a34a" : "#ea580c" }}>
                         {fmt(net)}

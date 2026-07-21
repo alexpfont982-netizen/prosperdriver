@@ -268,13 +268,13 @@ export default function App() {
         </div> 
 
         {view === "dashboard" && (
-          <Dashboard t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
+          <Dashboard t={t} lang={lang} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} />
         )}
         {view === "history" && (
-          <History t={t} incomes={incomes} expenses={expenses} journeys={journeys} isMobile={isMobile} currency={currency} />
+          <History t={t} lang={lang} incomes={incomes} expenses={expenses} journeys={journeys} isMobile={isMobile} currency={currency} />
         )}
         {view === "reports" && (
-          <Reports t={t} journeys={journeys} expenses={expenses} isMobile={isMobile} currency={currency} />
+          <Reports t={t} lang={lang} journeys={journeys} expenses={expenses} isMobile={isMobile} currency={currency} />
         )}
         {view === "monthlyGoals" && (
           <MonthlyGoals t={t} incomes={incomes} expenses={expenses} isMobile={isMobile} currency={currency} profile={profile} onUpdateGoals={handleUpdateGoals} />

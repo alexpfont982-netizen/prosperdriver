@@ -1,17 +1,37 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PLAT_CONFIG, CAT_CONFIG } from "../data/seed";
+import { getLocalDateStr } from "../lib/dateUtils";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-export default function History({ t, incomes, expenses, journeys = [], isMobile, currency }) {
+// Dispara `inView = true` la primera vez que el elemento entra en pantalla, y no vuelve a cambiar
+// (así la animación de cada gráfico corre justo cuando el usuario lo ve, no al montar la página)
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    }, { threshold });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+const LOCALE_MAP = { es: "es-ES", pt: "pt-BR", en: "en-US" };
+
+export default function History({ t, lang, incomes, expenses, journeys = [], isMobile, currency }) {
+  const locale = LOCALE_MAP[lang] || "pt-BR";
   const [tab, setTab]       = useState("incomes");
   const [filter, setFilter] = useState("all");
-  const [grown, setGrown]   = useState(false);
 
-  // Dispara el efecto de crecimiento de las barras al abrir la sección de Histórico
-  useEffect(() => {
-    const id = setTimeout(() => setGrown(true), 50);
-    return () => clearTimeout(id);
-  }, []);
+  const [accRef, accInView]   = useInView(); // Ganhos e Despesas Acumulados
+  const [donutRef, donutInView] = useInView(); // Despesas por Categoria
 
   const sym = currency?.symbol || "R$";
   const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -41,21 +61,6 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
     })
     .sort((a, b) => b.value - a.value);
   const totalExpensesAll = donutData.reduce((a, d) => a + d.value, 0);
-
-  // ── DATOS GRÁFICO (últimos 7 días) ──
-  const last7 = [...Array(7)].map((_,i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const key = d.toISOString().slice(0,10);
-    const dayIncomes  = incomes.filter(r => r.date?.slice(0,10) === key);
-    const dayExpenses = expenses.filter(e => e.date?.slice(0,10) === key);
-    return {
-      label: d.toLocaleDateString("pt-BR", { weekday:"short" }),
-      income:  dayIncomes.reduce((a,r) => a + r.amount, 0),
-      expense: dayExpenses.reduce((a,e) => a + e.amount, 0),
-    };
-  });
-  const maxVal = Math.max(...last7.map(d => Math.max(d.income, d.expense)), 1);
 
   // ── GANHOS E DESPESAS ACUMULADOS (histórico completo) ──
   const cumulativeData = (() => {
@@ -89,12 +94,14 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
     <div style={{ display:"flex", flexDirection:"column", gap: isMobile ? 14 : 20, paddingBottom: isMobile ? 180 : 0 }}>
 
       {/* GANHOS E DESPESAS ACUMULADOS */}
-      <div style={panel}>
+      <div ref={accRef} style={panel}>
         <div style={{ fontWeight: 600, fontSize: 15, color: "#111827", marginBottom: 16 }}>
           Ganhos e Despesas Acumulados
         </div>
         {cumulativeData.length === 0 ? (
           <div style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "40px 0" }}>Sem dados ainda</div>
+        ) : !accInView ? (
+          <div style={{ height: isMobile ? 200 : 260 }} />
         ) : (
           <ResponsiveContainer width="100%" height={isMobile ? 200 : 260}>
             <AreaChart data={cumulativeData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
@@ -112,8 +119,8 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
               <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} width={40} />
               <Tooltip formatter={(v) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} />
-              <Area type="monotone" dataKey="ganancias" stroke="#16a34a" strokeWidth={2} fill="url(#colorGanancias)" name={t.grossRevenue} />
-              <Area type="monotone" dataKey="gastos" stroke="#ea580c" strokeWidth={2} fill="url(#colorGastos)" name={t.totalExpenses} />
+              <Area type="monotone" dataKey="ganancias" stroke="#16a34a" strokeWidth={2} fill="url(#colorGanancias)" name={t.grossRevenue} animationDuration={1875} />
+              <Area type="monotone" dataKey="gastos" stroke="#ea580c" strokeWidth={2} fill="url(#colorGastos)" name={t.totalExpenses} animationDuration={1875} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -124,7 +131,7 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
       </div>
 
       {/* DESPESAS POR CATEGORIA (DONUT) */}
-      <div style={panel}>
+      <div ref={donutRef} style={panel}>
         <div style={{ fontWeight: 600, fontSize: 15, color: "#111827", marginBottom: 16 }}>
           {t.expensesByCategory}
         </div>
@@ -133,22 +140,27 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
         ) : (
           <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: "center", gap: 20 }}>
             <div style={{ width: isMobile ? "100%" : 220, flexShrink: 0 }}>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={55}
-                    outerRadius={82}
-                    paddingAngle={2}
-                    strokeWidth={0}
-                  >
-                    {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} />
-                </PieChart>
-              </ResponsiveContainer>
+              {donutInView ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={55}
+                      outerRadius={82}
+                      paddingAngle={2}
+                      strokeWidth={0}
+                      animationDuration={1000}
+                    >
+                      {donutData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                    <Tooltip formatter={(v) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ height: 200 }} />
+              )}
             </div>
             <div style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
               {donutData.map((d, i) => {
@@ -165,48 +177,6 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
             </div>
           </div>
         )}
-      </div>
-
-      {/* GRÁFICO EVOLUCIÓN */}
-      <div style={panel}>
-        <div style={{ fontWeight:600, fontSize:15, color:"#111827", marginBottom:4 }}>
-          Evolução dos últimos 7 dias
-        </div>
-        <div style={{ display:"flex", gap:16, marginBottom:16 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"#6b7280" }}>
-            <div style={{ width:10, height:10, borderRadius:2, background:"#2563eb" }}/> Ganhos
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:12, color:"#6b7280" }}>
-            <div style={{ width:10, height:10, borderRadius:2, background:"#ea580c" }}/> Gastos
-          </div>
-        </div>
-        <div style={{ display:"flex", alignItems:"flex-end", gap:isMobile ? 6 : 10, height:120 }}>
-          {last7.map((d,i) => (
-            <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:4, height:"100%", justifyContent:"flex-end" }}>
-              <div style={{ width:"100%", display:"flex", gap:2, alignItems:"flex-end", height:"100%" }}>
-                {[
-                  { value: d.income, gradient: "linear-gradient(180deg,#2563eb,#bfdbfe)" },
-                  { value: d.expense, gradient: "linear-gradient(180deg,#ea580c,#fed7aa)" },
-                ].map((bar, bi) => (
-                  <div key={bi} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", height:"100%", gap:3 }}>
-                    {bar.value > 0 && (
-                      <div style={{ fontSize:10, color:"#6b7280", fontWeight:600, whiteSpace:"nowrap" }}>
-                        {fmt(bar.value)}
-                      </div>
-                    )}
-                    <div style={{
-                      width:"100%", borderRadius:"3px 3px 0 0", minHeight: grown ? 3 : 0,
-                      height: grown ? `${(bar.value/maxVal*100)}%` : "0%",
-                      background: bar.gradient,
-                      transition: `height .7s cubic-bezier(.16,1,.3,1) ${(i * 0.06) + (bi * 0.03)}s`,
-                    }}/>
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize:9, color:"#9ca3af", textAlign:"center" }}>{d.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* TABS */}
@@ -249,7 +219,7 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                       <div>
                         <div style={{ fontWeight:600, fontSize:14, color:"#111827" }}>
-                          {new Date(date+"T12:00:00").toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" })}
+                          {new Date(date+"T12:00:00").toLocaleDateString(locale, { weekday:"long", day:"2-digit", month:"long" })}
                         </div>
                         <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>
                           {totalRides > 0 && `${totalRides} corridas`}
@@ -331,7 +301,7 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
                           {t[ci.label] || ci.label}
                         </span>
                         <span style={{ fontSize:11, color:"#9ca3af" }}>
-                          {new Date(e.date+"T12:00:00").toLocaleDateString("pt-BR", { day:"2-digit", month:"short" })}
+                          {new Date(e.date+"T12:00:00").toLocaleDateString(locale, { day:"2-digit", month:"short" })}
                         </span>
                       </div>
                     </div>
@@ -358,7 +328,7 @@ export default function History({ t, incomes, expenses, journeys = [], isMobile,
                 <div key={j.id} style={panel}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                     <div style={{ fontWeight:600, fontSize:14, color:"#111827" }}>
-                      {new Date(j.date+"T12:00:00").toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" })}
+                      {new Date(j.date+"T12:00:00").toLocaleDateString(locale, { weekday:"long", day:"2-digit", month:"long" })}
                     </div>
                     <div style={{ fontWeight:700, fontSize:16, color:"#16a34a" }}>{fmt(j.total_earned)}</div>
                   </div>

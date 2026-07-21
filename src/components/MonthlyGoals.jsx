@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Pencil, X, Check } from "lucide-react";
+import { getLocalDateStr, getLocalMonthStr } from "../lib/dateUtils";
 
 export default function MonthlyGoals({ t, incomes, expenses, isMobile, currency, profile, onUpdateGoals }) {
   const sym = currency?.symbol || "R$";
   const fmt = (n) => sym + " " + Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   const now = new Date();
-  const currentMonthStr = now.toISOString().slice(0, 7); // YYYY-MM
-  const todayStr = now.toISOString().slice(0, 10);
+  const currentMonthStr = getLocalMonthStr(now); // YYYY-MM
+  const todayStr = getLocalDateStr(now);
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
   // Totales del MES actual (antes sumaba todo el historial — corregido)
