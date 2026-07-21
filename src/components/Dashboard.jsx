@@ -115,14 +115,14 @@ export default function Dashboard({ t, lang, incomes, expenses, isMobile, curren
           ) : (
             <div style={{ display: "flex", alignItems: "flex-end", gap: isMobile ? 5 : 8, height: isMobile ? 100 : 120 }}>
               {last7.map((d, i) => (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
+                <div key={i} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, height: "100%", justifyContent: "flex-end" }}>
                   <div style={{ width: "100%", display: "flex", gap: 2, alignItems: "flex-end", height: "100%" }}>
                     {[
                       { value: d.income, gradient: "linear-gradient(180deg,#2563eb,#bfdbfe)" },
                       { value: d.expense, gradient: "linear-gradient(180deg,#ea580c,#fed7aa)" },
                     ].map((bar, bi) => (
-                      <div key={bi} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 3 }}>
-                        {bar.value > 0 && (
+                      <div key={bi} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 3 }}>
+                        {!isMobile && bar.value > 0 && (
                           <div style={{ fontSize: 9, color: "#6b7280", fontWeight: 600, whiteSpace: "nowrap" }}>
                             {fmt(bar.value)}
                           </div>
